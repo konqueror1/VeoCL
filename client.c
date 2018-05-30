@@ -67,6 +67,13 @@ void build_decoding_table() {
         decoding_table[(unsigned char) encoding_table[i]] = i;
 }
 
+void timestamp( time_t now )
+{
+	struct tm tm;
+	localtime_r(&now, &tm);
+	printf("[%d-%02d-%02d %02d:%02d:%02d]", tm.tm_year + 1900,tm.tm_mon + 1,tm.tm_mday,tm.tm_hour,tm.tm_min,tm.tm_sec);
+}
+
 char *base64_encode(const unsigned char *data, size_t input_length, size_t *output_length) {
 
     *output_length = 4 * ((input_length + 2) / 3);
@@ -230,8 +237,9 @@ int pool() {
 						diff = strtol(&buffer[j+2], (char **)NULL, 10);
 						sharediff = strtol(&buffer[j+8], (char **)NULL, 10);
 
-						if (strncmp(data, bf, 32)!=0) {						
-							printf(YELLOW "Network diff: %i, share diff: %i" RESET "\n", diff, sharediff);
+						if (strncmp(data, bf, 32)!=0) {
+							timestamp(time(NULL));
+							printf(YELLOW " Network diff: %i, share diff: %i" RESET "\n", diff, sharediff);
 							memcpy(data, bf, 32);
 						}
 
@@ -307,7 +315,8 @@ int submitnonce(char *nonce) {
 	for(int i=0; i<bytes - 5; i++)
 		if(buffer[i] == '\r' && buffer[i+1] == '\n' && buffer[i+2] == '\r' && buffer[i+3] == '\n') {
 			if(buffer[i+4] == '[' && buffer[bytes-1] == ']') {
-				printf("Share accepted.\n");
+				timestamp(time(NULL));
+				printf(" Share accepted.\n");
 			}
 			//write(1, &buffer[i+4], bytes - i - 4);
 		}
@@ -431,7 +440,8 @@ void *worker(void *p1) {
 
                 err = clEnqueueReadBuffer( gc->commands, gc->output, CL_TRUE, 0, 8 * gc->load, out, 0, NULL, NULL );
                 if (err != CL_SUCCESS) {
-                        printf("Error: Failed to read output array! %d\n", err);
+			timestamp(time(NULL));
+                        printf(" Error: Failed to read output array! %d\n", err);
                         exit(1);
                 }
 		gc->blocksdone++;
@@ -461,7 +471,8 @@ void *worker(void *p1) {
 			int xxx = hash2integer(hash0);
 
 			if(xxx >= sharediff) {
-   				printf(GREEN "Share with difficulty " BWHITE "%d" GREEN " found. Submitting ..." RESET "\n", xxx);
+				timestamp(time(NULL));
+   				printf(GREEN " Share with difficulty " BWHITE "%d" GREEN " found. Submitting ..." RESET "\n", xxx);
 				while(submitnonce(submit) == -1);
 			}
 		}
@@ -503,15 +514,18 @@ int main(int argc, char **argv) {
 		printf(BWHITE "Usage: ./veoCL VeoAddress poolip:port/path" RESET "\n");
 		address = "BJu4+hTL0dETOTWd1ErWMHjhkuncoxyiVOtsMY/+frhSyGi4WiAWhs79/svxdcPwQi6RgqyIEvGrEqR8DgWAcEg=";
 	}
-
-	printf("Mining to Address: " BWHITE "%s" RESET "\n",address);
-	printf("Mining to Pool: " BWHITE "%s:%i%s" RESET "\n",hostname,poolport,workPath);
+	
+	timestamp(time(NULL));
+	printf(" Mining to Address: " BWHITE "%s" RESET "\n",address);
+	timestamp(time(NULL));
+	printf(" Mining to Pool: " BWHITE "%s:%i%s" RESET "\n",hostname,poolport,workPath);
 
 	// Resolve IP
 	struct hostent *host = gethostbyname(hostname);
 
 	if(host == NULL || host->h_addr_list == NULL) {
-		printf(RED "Could not connect to pool!" RESET "\n");
+		timestamp(time(NULL));
+		printf(RED " Could not connect to pool!" RESET "\n");
 		return -1;			
 	}
 
@@ -544,10 +558,11 @@ int main(int argc, char **argv) {
         }
 
         struct gpuContext *c = (struct gpuContext*) malloc(sizeof(struct gpuContext) * ret_num_devices);
-
-	printf("Getting work from Pool...\n");
+	timestamp(time(NULL));
+	printf(" Getting work from Pool...\n");
 	while(pool() == -1);
-	printf("Got work. Starting miner...\n");
+	timestamp(time(NULL));
+	printf(" Got work. Starting miner...\n");
 
         for(int i=0; i<ret_num_devices; i++) {
 		c[i].blocksdone = 0;
@@ -561,7 +576,8 @@ int main(int argc, char **argv) {
 		clGetDeviceInfo(device_id[i], CL_DEVICE_NAME, sizeof(gpuname), gpuname, NULL);
 		clGetDeviceInfo(device_id[i], CL_DEVICE_MAX_COMPUTE_UNITS, sizeof(maxComputeUnits), &maxComputeUnits, NULL);
 		clGetDeviceInfo(device_id[i], CL_DEVICE_MAX_WORK_GROUP_SIZE, sizeof(workgroup), &workgroup, NULL);
-		printf("Device found: " BWHITE "%s" RESET ", using load %lu\n", gpuname, maxComputeUnits * workgroup);
+		timestamp(time(NULL));
+		printf(" Device found: " BWHITE "%s" RESET ", using load %lu\n", gpuname, maxComputeUnits * workgroup);
 		c[i].name = malloc(sizeof(gpuname)+1);
 		memcpy(c[i].name, gpuname, sizeof(gpuname));
 		c[i].name[sizeof(gpuname)] = 0;
@@ -634,11 +650,12 @@ int main(int argc, char **argv) {
 		gettimeofday(&tv2, NULL);
 		if(run % 3 == 0) {
 			unsigned long long total = 0;
+			timestamp(time(NULL));
 			for(int i=0; i < ret_num_devices; i++) {
 				unsigned long long rate = (c[i].load * (1ULL << 15)) / c[i].waitus; total += rate;
-				printf("GPU %u, %s: %lluMH/s ", i, c[i].name, rate);
+				printf(" GPU %u, %s: %lluMH/s", i, c[i].name, rate);
 			}
-			printf("Total: %lluMH/s\n", total);
+			printf(" Total: %lluMH/s\n", total);
 		}
 		usleep(2000000);
 		while(pool() == -1);
