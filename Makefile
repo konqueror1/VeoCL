@@ -5,10 +5,10 @@ dependencies = client.c Makefile sha256.c sha256.h
 all:	clientnvidia clientamd
 
 clientnvidia:	$(dependencies)
-	gcc -o clientnvidia $(inputFiles) -D'CLWAIT=1' $(compileOptions)
+	gcc -o veoCL $(inputFiles) -D'CLWAIT=1' $(compileOptions)
 
 clientamd:	$(dependencies)
-	gcc -o clientamd $(inputFiles) $(compileOptions)
+	gcc -o veoCL_amd $(inputFiles) $(compileOptions)
 
 clean:
-	rm clientnvidia clientamd
+	rm veoCL veoCL_amd

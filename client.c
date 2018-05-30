@@ -29,6 +29,16 @@
 #define MAXGPU          32
 #define NONCESIZE  	23
 
+#define RED     "\x1b[31m"
+#define GREEN   "\x1b[32m"
+#define YELLOW  "\x1b[33m"
+#define BLUE    "\x1b[34m"
+#define MAGENTA "\x1b[35m"
+#define CYAN    "\x1b[36m"
+#define WHITE   "\x1b[37m"
+#define BWHITE  "\x1b[97m"
+#define RESET   "\x1b[0m"
+
 cl_device_id device_id[32];
 
 int randfd;
@@ -123,8 +133,7 @@ void base64_cleanup() {
 
 void nonblock(int sock) {
 	int flags = fcntl(sock, F_GETFL, 0);
-	flags = flags | O_NONBLOCK;
-	fcntl(sock, F_SETFL, flags);
+	fcntl(sock, F_SETFL, O_NONBLOCK | flags);
 }
 
 int pool() {
@@ -146,8 +155,8 @@ int pool() {
 
 	char buffer[1000];
 
-	if(strlen(workPath) > 3) {	
-		sprintf(buffer, "POST %s HTTP/1.1\r\ncontent-type: application/octet-stream\r\ncontent-length: %i\r\nhost: %s:%i\r\nconnection: close\r\n\r\n[\"mining_data\", \"%s\"]", 
+	if(strlen(workPath) > 3) {
+		sprintf(buffer, "POST %s HTTP/1.1\r\ncontent-type: application/octet-stream\r\ncontent-length: %i\r\nhost: %s:%i\r\nconnection: close\r\n\r\n[\"mining_data\", \"%s\"]",
 			workPath,
 			(19 + (int)strlen(address)),
 			hostname,
@@ -155,7 +164,7 @@ int pool() {
 			address
 		);
 	} else {
-		sprintf(buffer, "POST %s HTTP/1.1\r\ncontent-type: application/octet-stream\r\ncontent-length: %i\r\nhost: %s:%i\r\nconnection: close\r\n\r\n[\"mining_data\",8080]", 
+		sprintf(buffer, "POST %s HTTP/1.1\r\ncontent-type: application/octet-stream\r\ncontent-length: %i\r\nhost: %s:%i\r\nconnection: close\r\n\r\n[\"mining_data\",8080]",
 			workPath,
 			20,
 			hostname,
@@ -222,7 +231,7 @@ int pool() {
 						sharediff = strtol(&buffer[j+8], (char **)NULL, 10);
 
 						if (strncmp(data, bf, 32)!=0) {						
-							printf("Network diff: %i, share diff: %i\n", diff, sharediff);
+							printf(YELLOW "Network diff: %i, share diff: %i" RESET "\n", diff, sharediff);
 							memcpy(data, bf, 32);
 						}
 
@@ -452,7 +461,7 @@ void *worker(void *p1) {
 			int xxx = hash2integer(hash0);
 
 			if(xxx >= sharediff) {
-				printf("Share with difficulty %d found. Submitting ...\n", xxx);
+   				printf(GREEN "Share with difficulty " BWHITE "%d" GREEN " found. Submitting ..." RESET "\n", xxx);
 				while(submitnonce(submit) == -1);
 			}
 		}
@@ -460,6 +469,9 @@ void *worker(void *p1) {
 }
 
 int main(int argc, char **argv) {
+    printf("╔═══════════════════════════╗\n");
+    printf("║" CYAN "VeoCL" RESET " - " YELLOW "Amoveo OpenCL miner" RESET "║\n");
+    printf("╚═══════════════════════════╝\n");
 	// Default-pool:
 	poolport = 8880;
 	hostname = "veopool.pw";
@@ -488,18 +500,18 @@ int main(int argc, char **argv) {
 		address = (char *)malloc(strlen(argv[1]) + 1);
 		strcpy(address, argv[1]);
 	} else {
-		printf("Usage: ./veoCL address poolip:port/path\n");
-		address = "BONJmlU2FUqYgUY60LTIumsYrW/c6MHte64y5KlDzXk5toyEMaBzWm8dHmdMfJmXnqvbYmlwim0hiFmYCCn3Rm0=";
+		printf(BWHITE "Usage: ./veoCL VeoAddress poolip:port/path" RESET "\n");
+		address = "BJu4+hTL0dETOTWd1ErWMHjhkuncoxyiVOtsMY/+frhSyGi4WiAWhs79/svxdcPwQi6RgqyIEvGrEqR8DgWAcEg=";
 	}
 
-	printf("Mining to Address: %s\n",address);
-	printf("Mining to Pool: %s:%i%s\n",hostname,poolport,workPath);
+	printf("Mining to Address: " BWHITE "%s" RESET "\n",address);
+	printf("Mining to Pool: " BWHITE "%s:%i%s" RESET "\n",hostname,poolport,workPath);
 
 	// Resolve IP
 	struct hostent *host = gethostbyname(hostname);
 
 	if(host == NULL || host->h_addr_list == NULL) {
-		printf("Could not connect to pool.\n");
+		printf(RED "Could not connect to pool!" RESET "\n");
 		return -1;			
 	}
 
@@ -549,7 +561,7 @@ int main(int argc, char **argv) {
 		clGetDeviceInfo(device_id[i], CL_DEVICE_NAME, sizeof(gpuname), gpuname, NULL);
 		clGetDeviceInfo(device_id[i], CL_DEVICE_MAX_COMPUTE_UNITS, sizeof(maxComputeUnits), &maxComputeUnits, NULL);
 		clGetDeviceInfo(device_id[i], CL_DEVICE_MAX_WORK_GROUP_SIZE, sizeof(workgroup), &workgroup, NULL);
-		printf("Device found: %s, using load %lu\n", gpuname, maxComputeUnits * workgroup);
+		printf("Device found: " BWHITE "%s" RESET ", using load %lu\n", gpuname, maxComputeUnits * workgroup);
 		c[i].name = malloc(sizeof(gpuname)+1);
 		memcpy(c[i].name, gpuname, sizeof(gpuname));
 		c[i].name[sizeof(gpuname)] = 0;

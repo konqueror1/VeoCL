@@ -10,10 +10,12 @@ BONJmlU2FUqYgUY60LTIumsYrW/c6MHte64y5KlDzXk5toyEMaBzWm8dHmdMfJmXnqvbYmlwim0hiFmY
 Compile with "make"
 
 run 
-./clientnvidia <address> <poolip:poolport/work>
+./veoCL <address> <poolip:poolport/work>
 or
-./clientamd <address> <poolip:poolport/work>
+./veoCL_amd <address> <poolip:poolport/work>
 
+For example:
 
-
-
+cd /usr/src/VeoCL
+make
+./VeoCL BJu4+hTL0dETOTWd1ErWMHjhkuncoxyiVOtsMY/+frhSyGi4WiAWhs79/svxdcPwQi6RgqyIEvGrEqR8DgWAcEg= veopool.pw:8880/work
